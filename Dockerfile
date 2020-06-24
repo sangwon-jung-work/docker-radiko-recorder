@@ -1,7 +1,8 @@
 FROM ubuntu:14.04
 MAINTAINER Atsushi Nagase<a@ngs.io>
 
-RUN apt-get update -y && apt-get install -y software-properties-common python-software-properties build-essential libxml2-utils rtmpdump wget git zlib1g-dev
+RUN apt-get update -y && apt-get install -y software-properties-common python-software-properties build-essential libxml2-utils rtmpdump wget git zlib1g-dev tzdata
+RUN ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
 RUN mkdir /var/src
 WORKDIR /var/src
 RUN wget http://www.tortall.net/projects/yasm/releases/yasm-1.2.0.tar.gz && tar zxvf yasm-1.2.0.tar.gz && cd yasm-1.2.0 && ./configure && make && make install

@@ -1,14 +1,25 @@
-docker-radiko-recorder
-======================
+# docker-radiko-recorder
 
-[![Docker Automated build](https://img.shields.io/docker/automated/atsnngs/radiko-recorder.svg?maxAge=2592000)](https://hub.docker.com/r/atsnngs/radiko-recorder/)
+Docker 환경에 Radiko 녹음 서버를 구성합니다.
 
-Dockerfile of Radiko Recorder based on Ubuntu
+*(서버는 일본지역 내에 있어야 하며, IP 인식지역 이외 방송 녹음을 위해서는 프리미엄 등록이 필요합니다)*
 
 ```sh
-docker pull atsnngs/radiko-recorder
-docker run --rm -v $(pwd):/var/radiko atsnngs/radiko-recorder ALPHA-STATION 60 $RADIKO_LOGIN $RADIKO_PASSWORD
-docker run --rm -v $(pwd):/var/radiko atsnngs/radiko-recorder FMJ 60 $RADIKO_LOGIN $RADIKO_PASSWORD
+# save repository
+git clone https://github.com/sangwon-jung-work/docker-radiko-recorder.git
+cd docker-radiko-recorder
+
+# Build radiko Recording Server
+docker build --tag (image name):(image version) .
+
+# Build radiko Recording Server Example
+docker build --tag radiko_recorder:1.1 .
+
+# recording example
+docker run --rm -v (save dir):/var/radiko (image name):(image version) FMJ 60 $RADIKO_LOGIN $RADIKO_PASSWORD
+
+# recording example(joqr)
+docker run --rm -v /recorder:/var/radiko radiko_recorder:1.1 QRR 31 $RADIKO_LOGIN $RADIKO_PASSWORD
 ```
 
 Refs

@@ -250,7 +250,7 @@ rtmpdump -v \
 
 Logout
 
-ffmpeg -loglevel quiet -y -i "/tmp/${channel}_${date}" -acodec libmp3lame -ab 128k "${outdir}/${PREFIX}_${date}.mp3"
+ffmpeg -loglevel info -y -i "/tmp/${channel}_${date}" -acodec aac -ab 128k "${outdir}/${PREFIX}_${date}.m4a"
 
 if [ $? = 0 ]; then
     rm -f "/tmp/${channel}_${date}"

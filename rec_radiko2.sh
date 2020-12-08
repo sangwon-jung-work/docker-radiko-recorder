@@ -4,6 +4,7 @@
 pid=$$
 filedate=`date '+%Y%m%d'`
 tempfiledate=`date '+%Y%m%d_%H%M%S'`
+radikorootrul="https://radiko.jp"
 
 
 outdir="."
@@ -17,7 +18,7 @@ Logout () {
        -H "Accept-Encoding: gzip, deflate" \
        -H "X-Requested-With: XMLHttpRequest" \
        -b $cookiefile \
-       https://radiko.jp/ap/member/webapi/member/logout
+       $radikorootrul/ap/member/webapi/member/logout
 
     if [ -f $cookiefile ]; then
         rm -f $cookiefile
@@ -64,7 +65,7 @@ logoutfile="${outdir}/${PREFIX}_${tempfiledate}_logout.txt"
 if [ $mail ]; then
   curl -X POST -d "mail=$mail&pass=$pass" \
        -c $cookiefile \
-       https://radiko.jp/ap/member/login/login
+       $radikorootrul/ap/member/login/login
 
   if [ ! -f $cookiefile ]; then
     echo "failed login"
@@ -80,7 +81,7 @@ curl -H "Accept-Encoding: gzip, deflate" \
      -H "Cache-Control: no-cache" \
      -b $cookiefile \
      -o $checkfile \
-     https://radiko.jp/ap/member/webapi/member/login/check
+     $radikorootrul/ap/member/webapi/member/login/check
 
 if [ $? -ne 0 ]; then
   echo "failed login"
@@ -102,7 +103,7 @@ curl -H "pragma: no-cache" \
      -H "X-Radiko-Device: pc" \
      -b $cookiefile \
      -D $auth1header \
-     https://radiko.jp/v2/api/auth1
+     $radikorootrul/v2/api/auth1
 
 if [ $? -ne 0 ]; then
   echo "failed auth1 process"
@@ -132,7 +133,7 @@ curl -H "X-Radiko-User: dummy_user" \
      -H "X-Radiko-Partialkey: ${partialkey}" \
      -b $cookiefile \
      -o $auth2file \
-     https://radiko.jp/v2/api/auth2
+     $radikorootrul/v2/api/auth2
 
 if [ $? -ne 0 -o ! -f $auth2file ]; then
   echo "failed auth2 process"
@@ -148,7 +149,32 @@ echo "areaid: $areaid"
 
 
 ###
-# get hls stream url
+# get station's areafree information
+###
+fullstation="${outdir}/${PREFIX}_${tempfiledate}_full.xml"
+
+if [ -f $fullstation ]; then
+  rm -f $fullstation
+fi
+
+wget -q -O $fullstation "${radikorootrul}/v3/station/region/full.xml"
+
+echo "${radikorootrul}/v3/station/region/full.xml"
+
+stAreafree=`xmllint --xpath "//station[id[text()='${channel}']]/areafree/text()" ${fullstation}`
+
+# detect areafree, type code
+if [ $stAreafree -eq 1 ]; then
+  areafree=1
+  connectiontype='c'
+else
+  areafree=0
+  connectiontype='b'
+fi
+
+
+###
+# get station's hls stream url
 ###
 stationinfo="${outdir}/${PREFIX}_${tempfiledate}_${channel}.xml"
 
@@ -156,27 +182,33 @@ if [ -f $stationinfo ]; then
   rm -f $stationinfo
 fi
 
-wget -q -O $stationinfo "https://radiko.jp/v3/station/stream/pc_html5/${channel}.xml"
+wget -q -O $stationinfo "${radikorootrul}/v3/station/stream/pc_html5/${channel}.xml"
+
+echo "${radikorootrul}/v3/station/stream/pc_html5/${channel}.xml"
 
 # first areafree url
-stream_url=`xmllint --xpath '//url[@timefree='0'][@areafree='1'][1]/playlist_create_url/text()' ${stationinfo}`
+stream_url=`xmllint --xpath '//url[@timefree='0'][@areafree='${areafree}'][1]/playlist_create_url/text()' ${stationinfo}`
 
 # generate random id
 lsid=`date +%s999 -d '999999 seconds' | tr -d '\n' | md5sum | cut -d ' ' -f 1`
 
+
 # add m3u8 parameters
-stream_param="?station_id=${channel}&l=15&lsid=${lsid}&type=b"
+stream_param="?station_id=${channel}&l=15&lsid=${lsid}&type=${connectiontype}"
 
 
 # start recording & convert aac
 ffmpeg -headers "X-Radiko-AreaId: ${areaid}" -headers "X-Radiko-AuthToken: ${authtoken}" -loglevel info -y \
-       -i "${stream_url}${stream_param}" -acodec aac -ab 100k -t $DURATION "${outdir}/${PREFIX}_${filedate}.m4a"
+       -i "${stream_url}${stream_param}" -acodec copy -t $DURATION "${outdir}/${PREFIX}_${filedate}.m4a"
 
 
 # delete temp files
 if [ $? = 0 ]; then
-  rm -f $keyfile $checkfile $auth1header $auth2file $stationinfo
+  rm -f $keyfile $checkfile $auth1header $auth2file $fullstation $stationinfo
+else
+  rm -f $keyfile $checkfile $auth1header $auth2file $fullstation $stationinfo
 fi
+
 
 #
 # Logout

@@ -1,5 +1,7 @@
 #!/bin/bash
 # 2020.12.07 change auth urls, recording method(swf -> m3u8, wget -> curl)
+# 2021.01.02 add FFREPORT (output log information variable)
+
 
 pid=$$
 filedate=`date '+%Y%m%d'`
@@ -195,6 +197,16 @@ lsid=`date +%s999 -d '999999 seconds' | tr -d '\n' | md5sum | cut -d ' ' -f 1`
 
 # add m3u8 parameters
 stream_param="?station_id=${channel}&l=15&lsid=${lsid}&type=${connectiontype}"
+
+
+# check exist log folder
+if [ ! -d $outdir/log ];
+then
+  mkdir $outdir/log
+fi
+
+# set ffmpeg log variable(output file info, set log level debug
+export FFREPORT=file=$outdir/log/radiko_$PREFIX.log.$filedate:level=48
 
 
 # start recording & convert aac

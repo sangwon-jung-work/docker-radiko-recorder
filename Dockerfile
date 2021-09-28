@@ -1,9 +1,9 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 MAINTAINER swjung89 <sangwon-jung-work@gmail.com>
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update -y && apt-get install -y software-properties-common build-essential libxml2-utils wget curl git  openssl libssl-dev tzdata zlib1g-dev
+RUN apt-get update -y && apt-get install -y software-properties-common build-essential libxml2-utils wget curl git openssl libssl-dev tzdata zlib1g-dev
 RUN ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
 RUN mkdir /var/src
 WORKDIR /var/src

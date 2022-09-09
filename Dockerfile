@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 MAINTAINER swjung89 <sangwon-jung-work@gmail.com>
 
 ARG DEBIAN_FRONTEND=noninteractive

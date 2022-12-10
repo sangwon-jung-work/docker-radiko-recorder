@@ -5,6 +5,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y && apt-get install -y software-properties-common build-essential libxml2-utils wget curl git openssl libssl-dev tzdata zlib1g-dev nasm 
 RUN ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1000
 RUN mkdir /var/src
 WORKDIR /var/src
 

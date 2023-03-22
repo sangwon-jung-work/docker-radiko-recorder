@@ -1,6 +1,9 @@
 #!/bin/bash
 # 2020.12.07 change auth urls, recording method(swf -> m3u8, wget -> curl)
 # 2021.01.02 add FFREPORT (output log information variable)
+# 2022.10.04 modify API change(check)
+# 2023.03.22 modify login url, using the v2 api, add fail handing and header in check, auth1, auth2
+#
 
 
 pid=$$
@@ -22,9 +25,9 @@ Logout () {
        -b $cookiefile \
        $radikorootrul/ap/member/webapi/member/logout
 
-    if [ -f $cookiefile ]; then
-        rm -f $cookiefile
-    fi
+    #if [ -f $cookiefile ]; then
+    #    rm -f $cookiefile
+    #fi
     echo "=== Logout: radiko.jp ==="
 }
 
@@ -51,12 +54,12 @@ fi
 
 
 #loginfile="${outdir}/${PREFIX}_${tempfiledate}_login.txt"
-cookiefile="${outdir}/${PREFIX}_${tempfiledate}_cookie.txt"
-keyfile="${outdir}/${PREFIX}_${tempfiledate}_authkey.txt"
-checkfile="${outdir}/${PREFIX}_${tempfiledate}_check.txt"
-auth1header="${outdir}/${PREFIX}_${tempfiledate}_auth1Header.txt"
-auth2file="${outdir}/${PREFIX}_${tempfiledate}_auth2.txt"
-logoutfile="${outdir}/${PREFIX}_${tempfiledate}_logout.txt"
+cookiefile="${outdir}/${PREFIX}_${tempfiledate}_1cookie.txt"
+checkfile="${outdir}/${PREFIX}_${tempfiledate}_2check.txt"
+keyfile="${outdir}/${PREFIX}_${tempfiledate}_3authkey.txt"
+auth1header="${outdir}/${PREFIX}_${tempfiledate}_4auth1Header.txt"
+auth2file="${outdir}/${PREFIX}_${tempfiledate}_5auth2.txt"
+#logoutfile="${outdir}/${PREFIX}_${tempfiledate}_logout.txt"
 
 
 
@@ -67,7 +70,7 @@ logoutfile="${outdir}/${PREFIX}_${tempfiledate}_logout.txt"
 if [ $mail ]; then
   curl -X POST -d "mail=$mail&pass=$pass" \
        -c $cookiefile \
-       $radikorootrul/ap/member/login/login
+       $radikorootrul/ap/member/webapi/member/login
 
   if [ ! -f $cookiefile ]; then
     echo "failed login"
@@ -78,16 +81,37 @@ fi
 ###
 # check login status
 ###
-curl -H "Accept-Encoding: gzip, deflate" \
-     -H "Accept-Language: ja-JP" \
-     -H "Cache-Control: no-cache" \
+curl -H "pragma: no-cache" \
+     -H "X-Radiko-App: pc_html5" \
+     -H "X-Radiko-App-Version: 0.0.1" \
+     -H "X-Radiko-User: dummy_user" \
+     -H "X-Radiko-Device: pc" \
      -b $cookiefile \
      -o $checkfile \
      $radikorootrul/ap/member/webapi/member/login/check
 
-if [ $? -ne 0 ]; then
-  echo "failed login"
+if [ $? -eq 0 ] && [ -s $checkfile ];
+then
+  
+  getstatus=`cat ${checkfile} | jq -r '.status'`
+  
+  if [ $getstatus -eq 200 ]
+  then
+    echo "login status check success"
+  
+  else
+    echo "login status not 200. ${getstatus}"
+    Logout
+    exit 1
+    
+    # getstatus if end
+  fi
+  
+else
+  echo "login status check fail"
+  Logout
   exit 1
+
 fi
 
 
@@ -107,11 +131,28 @@ curl -H "pragma: no-cache" \
      -D $auth1header \
      $radikorootrul/v2/api/auth1
 
-if [ $? -ne 0 ]; then
-  echo "failed auth1 process"
+if [ $? -eq 0 ] && [ -s $auth1header ];
+then
+  
+  if [ "$(grep -c "200 OK" "$auth1header" )" -eq 1 ];
+  then
+    echo "auth1 request success"
+  
+  else
+    echo "auth1 response not 200"
+    Logout
+    exit 1
+    
+    # auth1 header text check if end
+  fi
+  
+else
+  echo "auth1 request fail"
   Logout
   exit 1
+  
 fi
+
 
 ###
 # get partial key
@@ -129,7 +170,10 @@ echo -e "authtoken: ${authtoken} \n offset: ${offset} length: ${length} \n parti
 #
 # access auth2
 #
-curl -H "X-Radiko-User: dummy_user" \
+curl -H "pragma: no-cache" \
+     -H "X-Radiko-App: pc_html5" \
+     -H "X-Radiko-App-Version: 0.0.1" \
+     -H "X-Radiko-User: dummy_user" \
      -H "X-Radiko-Device: pc" \
      -H "X-Radiko-Authtoken: ${authtoken}" \
      -H "X-Radiko-Partialkey: ${partialkey}" \
@@ -142,6 +186,30 @@ if [ $? -ne 0 -o ! -f $auth2file ]; then
   Logout
   exit 1
 fi
+
+if [ $? -eq 0 ] && [ -s $auth2file ];
+then
+  
+  if [ "$(grep -c "JP13" "$auth2file" )" -eq 1 ];
+  then
+    echo "auth2 request success"
+  
+  else
+    echo "auth2 response not normal"
+    Logout
+    exit 1
+    
+    # auth2 header text check if end
+  fi
+  
+  
+else
+  echo "auth2 request fail"
+  Logout
+  exit 1
+  
+fi
+
 
 echo "authentication success"
 
@@ -216,14 +284,20 @@ ffmpeg -headers "X-Radiko-AreaId: ${areaid}" -headers "X-Radiko-AuthToken: ${aut
 
 # delete temp files
 if [ $? = 0 ]; then
+  
+  #
+  # Logout
+  #
+  Logout
+  
   rm -f $keyfile $checkfile $auth1header $auth2file $fullstation $stationinfo
 else
+  
+  #
+  # Logout
+  #
+  Logout
+  
   rm -f $keyfile $checkfile $auth1header $auth2file $fullstation $stationinfo
 fi
-
-
-#
-# Logout
-#
-Logout
 

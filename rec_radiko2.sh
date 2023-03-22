@@ -25,9 +25,9 @@ Logout () {
        -b $cookiefile \
        $radikorootrul/ap/member/webapi/member/logout
 
-    #if [ -f $cookiefile ]; then
-    #    rm -f $cookiefile
-    #fi
+    if [ -f $cookiefile ]; then
+        rm -f $cookiefile
+    fi
     echo "=== Logout: radiko.jp ==="
 }
 
@@ -180,12 +180,6 @@ curl -H "pragma: no-cache" \
      -b $cookiefile \
      -o $auth2file \
      $radikorootrul/v2/api/auth2
-
-if [ $? -ne 0 -o ! -f $auth2file ]; then
-  echo "failed auth2 process"
-  Logout
-  exit 1
-fi
 
 if [ $? -eq 0 ] && [ -s $auth2file ];
 then

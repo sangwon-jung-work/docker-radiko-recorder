@@ -3,7 +3,7 @@
 # 2021.01.02 add FFREPORT (output log information variable)
 # 2022.10.04 modify API change(check)
 # 2023.03.22 modify login url, using the v2 api, add fail handing and header in check, auth1, auth2
-# 2023.03.23 add write a log to file
+# 2023.03.23 add write a log to file. modify use another recording url
 #
 
 
@@ -405,7 +405,7 @@ fi
 #echo "${radikorootrul}/v3/station/stream/pc_html5/${channel}.xml"
 
 # first areafree url
-stream_url=`xmllint --xpath '//url[@timefree='0'][@areafree='${areafree}'][1]/playlist_create_url/text()' ${stationinfo}`
+stream_url=`xmllint --xpath '//url[@timefree='0'][@areafree='${areafree}'][2]/playlist_create_url/text()' ${stationinfo}`
 
 # generate random id => fixed value from 2023.03.22
 lsid=`date +%s999 -d '999999 seconds' | tr -d '\n' | md5sum | cut -d ' ' -f 1`

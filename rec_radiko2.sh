@@ -130,7 +130,7 @@ then
   mkdir $outdir/log
 fi
 
-LOG_FILE=$outdir/log/radiko_shell.log.$filedate
+LOG_FILE=$outdir/log/radiko_shell_$PREFIX.log.$filedate
 
 
 loginfile="${outdir}/${PREFIX}_${tempfiledate}_login.txt"

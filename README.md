@@ -4,6 +4,7 @@ Docker 환경에 Radiko 녹음 서버를 구성합니다.
 
 *(서버는 일본지역 내에 있어야 하며, IP 인식지역 이외 방송 녹음을 위해서는 프리미엄 등록이 필요합니다)*
 
+## 사용법
 ```sh
 # save repository
 git clone https://github.com/sangwon-jung-work/docker-radiko-recorder.git
@@ -26,16 +27,19 @@ cd docker-radiko-recorder
 gh auth login
 
 FFMPEG_URL=$( gh api --jq '.assets[8]."browser_download_url"' -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/yt-dlp/FFmpeg-Builds/releases/latest )
-
 #
 # if just copy url
 FFMPEG_URL=(paste that url)
 
-# Build radiko Recording Server
-docker build --build-arg FFMPEG_LATEST_URL=$FFMPEG_URL --tag (image name):(image version) .
+#
+# set build date
+TODAY=$( date '+%Y%m%d' )
 
-# Build radiko Recording Server Example
-docker build --build-arg FFMPEG_LATEST_URL=$FFMPEG_URL --tag radiko_recorder:1.1 .
+# Build image
+docker build --build-arg FFMPEG_LATEST_URL=$FFMPEG_URL --build-arg BUILD_DATE=$TODAY --tag (image name):(image version) .
+
+# Build image Example
+docker build --build-arg FFMPEG_LATEST_URL=$FFMPEG_URL --build-arg BUILD_DATE=$TODAY --tag radiko_recorder:1.1 .
 
 # recording example
 docker run --rm -v (save dir):/var/radiko (image name):(image version) FMJ 60 $RADIKO_LOGIN $RADIKO_PASSWORD
